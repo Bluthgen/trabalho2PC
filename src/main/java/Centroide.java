@@ -1,3 +1,4 @@
+import mpi.Datatype;
 import mpi.MPI;
 
 import java.util.ArrayList;
@@ -43,10 +44,11 @@ class Centroide extends Elemento {
     boolean recalculaAtributosPar(List<Elemento> elementos) throws InterruptedException {
         int eu= MPI.COMM_WORLD.Rank();
         int tamanho= MPI.COMM_WORLD.Size();
+        Double temp= elementos.get(0).numDimensoes / (tamanho*1.0);
+        int numPorThread= (int) Math.ceil(temp);
+        Elemento[] recebidos= new Elemento[numPorThread];
         if (eu == 0){
-            for(int i= 0; i<tamanho; i++){
-
-            }
+            MPI.COMM_WORLD.Scatter(elementos, 0, numPorThread, Datatype.Contiguous(numPorThread,MPI.OBJECT), recebidos, 0, numPorThread, Datatype.Contiguous(numPorThread, MPI.OBJECT), eu);
         }else{
 
         }
