@@ -36,7 +36,7 @@ public class trabalho2PC{
         }
     }
 
-    //private CyclicBarrier barrier = new CyclicBarrier(quantThreads+1, new miolo());
+    private CyclicBarrier barrier = new CyclicBarrier(quantThreads+1, new miolo());
     private volatile boolean para = false;
     private final static Charset ENCODING = StandardCharsets.UTF_8;
     private static List<Elemento> elementos = new ArrayList<>();
@@ -127,7 +127,7 @@ public class trabalho2PC{
 
     private void k_meansPar() throws InterruptedException, BrokenBarrierException {
         int i, soma = 0;
-        //List<Thread> threads = new ArrayList<>();
+        List<Thread> threads = new ArrayList<>();
         List<ArrayList<Elemento>> elemetoParaThread = new ArrayList<>();
 
         for (i = 0; i < quantThreads; i++) {
@@ -150,17 +150,17 @@ public class trabalho2PC{
 
 
         for (i = 0; i < quantThreads; i++) {
-            //threads.add(new Thread(elemetoParaThread.get(i)));
-            //threads.get(i).start();
+            threads.add(new Thread(elemetoParaThread.get(i)));
+            threads.get(i).start();
         }
 
         while (!para) {
             barrier.await();
         }
 
-        //for (Thread thread : threads) {
-        //    thread.join();
-        //}
+        for (Thread thread : threads) {
+            thread.join();
+        }
     }
 
     public static void main(String[] args) throws IOException, InterruptedException, BrokenBarrierException {

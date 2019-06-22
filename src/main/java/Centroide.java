@@ -44,14 +44,27 @@ class Centroide extends Elemento {
     boolean recalculaAtributosPar(List<Elemento> elementos) throws InterruptedException {
         int eu= MPI.COMM_WORLD.Rank();
         int tamanho= MPI.COMM_WORLD.Size();
-        Double temp= elementos.get(0).numDimensoes / (tamanho*1.0);
+        Double temp= this.numDimensoes / (tamanho*1.0);
         int numPorThread= (int) Math.ceil(temp);
-        Elemento[] recebidos= new Elemento[numPorThread];
-        if (eu == 0){
-            MPI.COMM_WORLD.Scatter(elementos, 0, numPorThread, Datatype.Contiguous(numPorThread,MPI.OBJECT), recebidos, 0, numPorThread, Datatype.Contiguous(numPorThread, MPI.OBJECT), eu);
-        }else{
-
+        int[] recebidos= new int[numPorThread];
+        //int[] finais= new int[this.numDimensoes];         Talvez seja necessario
+        MPI.COMM_WORLD.Scatter(this.atributos, 0, numPorThread, Datatype.Contiguous(numPorThread,MPI.INT), recebidos, 0, numPorThread, Datatype.Contiguous(numPorThread, MPI.INT), 0);
+        boolean mudado= false;
+        for (int i = 0; i < numPorThread; i++) {
+            int soma = 0;
+            int num = 0;
+            for (Elemento elemento : elementos) {
+                if (elemento.getAssociado() == this) {
+                    num++;
+                    soma += elemento.getAtributo(i);
+                }
+            }
+            if (num > 0) {
+                if (setAtributo(i, soma / num)) {
+                    mudado = true;
+                }
+            }
         }
-        return false;
+        return mudado;
     }
 }
