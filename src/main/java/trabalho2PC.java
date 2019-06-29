@@ -1,3 +1,5 @@
+import mpi.MPI;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -8,7 +10,6 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
-import mpi.*;
 
 public class trabalho2PC{
 
