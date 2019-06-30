@@ -1,12 +1,9 @@
 import mpi.Datatype;
 import mpi.MPI;
 
-import java.util.ArrayList;
 import java.util.List;
 
 class Centroide extends Elemento {
-
-    private List<Thread> threads = new ArrayList<>();
 
     Centroide(int numD, int[] attr) {
         super(numD, attr);
@@ -41,7 +38,7 @@ class Centroide extends Elemento {
         return mudado;
     }
 
-    boolean recalculaAtributosPar(List<Elemento> elementos) throws InterruptedException {
+    boolean recalculaAtributosPar(List<Elemento> elementos){
         int eu= MPI.COMM_WORLD.Rank();
         int tamanho= MPI.COMM_WORLD.Size();
         Double temp= this.numDimensoes / (tamanho*1.0);
