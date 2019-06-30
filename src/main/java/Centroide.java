@@ -56,7 +56,8 @@ class Centroide extends Elemento {
         MPI.COMM_WORLD.Scatter(numPorThread, 0, 1, MPI.INT, recebidos, 0, 2, MPI.INT, 0);
 
         boolean[] mudado = {false};
-        int[] listaMudancas = new int[numDimensoes];
+        int[] listaMudancas = new int[numDimensoes*2+1];
+        int conn = 0;
         for (int i = 0; i < numDimensoes; i++) {
             int soma = 0;
             int num = 0;
@@ -80,12 +81,13 @@ class Centroide extends Elemento {
                 if (num > 0) {
                     int aux = soma / num;
                     if (setAtributo(i, aux)) {
-                        listaMudancas[i] = aux;
+                        listaMudancas[conn] = i;
+                        listaMudancas[conn+1] = aux;
+                        conn+=2;
                         mudado[0] = true;
-                    }else{
-                        listaMudancas[i] = -1;
                     }
                 }
+                listaMudancas[conn] = -1;
             }else{
                 int[] numA = {num};
                 int[] somaA = {soma};
@@ -94,12 +96,13 @@ class Centroide extends Elemento {
             }
         }
         MPI.COMM_WORLD.Bcast(mudado,0,1,MPI.BOOLEAN,0);
-        MPI.COMM_WORLD.Bcast(listaMudancas,0,1,MPI.INT,0);
+        MPI.COMM_WORLD.Bcast(listaMudancas,0,listaMudancas.length,MPI.INT,0);
         if(mudado[0] && nrThread!=0){
-            for(int l=0; l < atributos.length;l++){
-                if(listaMudancas[l]!=-1){
-                    atributos[l] = listaMudancas[l];
+            for(int l=0; l < listaMudancas.length;l+=2){
+                if(listaMudancas[l]==-1){
+                    break;
                 }
+                atributos[listaMudancas[l]]=listaMudancas[l+1];
             }
         }
         return mudado[0];
