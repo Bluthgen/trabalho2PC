@@ -4,8 +4,11 @@ import java.util.List;
 
 class Centroide extends Elemento {
 
-    Centroide(int numD, int[] attr) {
+    int id;
+
+    Centroide(int numD, int[] attr, int id) {
         super(numD, attr);
+        this.id= id;
     }
 
     private boolean setAtributo(int i, int attr) {
@@ -23,7 +26,7 @@ class Centroide extends Elemento {
             soma = 0;
             num = 0;
             for (Elemento elemento : elementos) {
-                if (elemento.getAssociado() == this) {
+                if (elemento.getAssociado() == this.id) {
                     num++;
                     soma += elemento.getAtributo(i);
                 }
@@ -37,7 +40,7 @@ class Centroide extends Elemento {
         return mudado;
     }
 
-    boolean recalculaAtributosPar(List<Elemento> elementos){
+    boolean recalculaAtributosPar(List<Elemento> elementos, int[] associados){
         int nrThread = MPI.COMM_WORLD.Rank();
         int tamanho = MPI.COMM_WORLD.Size();
         int[] numPorThread = new int[tamanho*2];
@@ -63,7 +66,7 @@ class Centroide extends Elemento {
             int num = 0;
 
             for(int k = recebidos[0]; k < recebidos[1]; k++) {
-                if (elementos.get(k).getAssociado() == this) {
+                if (associados[k] == this.id) {
                     num++;
                     soma += elementos.get(k).getAtributo(i);
                 }

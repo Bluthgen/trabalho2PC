@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
@@ -49,7 +50,7 @@ public class trabalho2PC{
         try (Scanner scanner = new Scanner(path, ENCODING.name())) {
             while (scanner.hasNextLine()) {
                 int[] atributos = centro(num, scanner);
-                lista.add(i, new Centroide(num, atributos));
+                lista.add(i, new Centroide(num, atributos, i));
                 i++;
             }
         }
@@ -76,20 +77,85 @@ public class trabalho2PC{
 
     private static void k_meansPar(){
         System.out.println("Entrando "+ MPI.COMM_WORLD.Rank());
-        int numC;
+        int numC, numCVelho= 0, numCCount= 0;
+        double tamT= MPI.COMM_WORLD.Size();
+        int id= MPI.COMM_WORLD.Rank();
+        int numPorThread= (int) Math.ceil(elementos.size()/tamT);
+        List<Elemento> paraTrabalho= elementos;
+        //int[] associados= new int[elementos.size()];
         while (!para) {
-            for (Elemento elemento : elementos) {
+            //Elemento[] trabalhado= new Elemento[numPorThread];
+            for (int i= id; i<elementos.size(); i+= tamT) {
+                Elemento elemento= elementos.get(i);
+                //trabalhado[i/(int)tamT]= elemento;
                 elemento.encontraCentroide(centroides);
+                //associados[i]= elemento.getAssociado();
             }
+
+            int[] atualizados= new int[numPorThread];
+            for(int i= id; i<elementos.size(); i+= tamT){
+                Elemento elemento= paraTrabalho.get(i);
+                int valor= elemento.getAssociado();
+                atualizados[i/(int)tamT]= valor;
+                //if(id == 0)
+                //    System.out.println(String.valueOf(i/tamT) + " -> " + String.valueOf(atualizados[i/(int)tamT]));
+            }
+            //System.out.println(1);
+            int[] novos= new int[elementos.size()];
+            //MPI.COMM_WORLD.Send(atualizados, 0, numPorThread, MPI.INT,0,0);
+            if(id == 0){
+                //System.out.println("Entrando");
+                for(int i= 0; i<tamT; i++){
+                    //int[] recebidos= new int[numPorThread];
+                    if(i != 0) {
+                        atualizados= new int[numPorThread];
+                        MPI.COMM_WORLD.Recv(atualizados, 0, numPorThread, MPI.INT, i, 0);
+                        /*for (int aux= 0; aux<numPorThread; aux++){
+                            System.out.println(atualizados[aux]);
+                        }*/
+                    }//System.out.println("Recebi!");
+                    for(int j= i; j<elementos.size(); j+= tamT){
+                        if (j/tamT >= atualizados.length)
+                            break;
+                        novos[j]= atualizados[j/(int)tamT];
+                        //System.out.println(novos[j]);
+                    }
+                    //System.out.println("Proximo!");
+                }
+                //System.out.println(2);
+
+            }else {
+                /*for (int aux= 0; aux<numPorThread; aux++){
+                    System.out.println(atualizados[aux]);
+                }
+                System.out.println("Enviando!");
+                */MPI.COMM_WORLD.Send(atualizados, 0, numPorThread, MPI.INT, 0, 0);
+            }MPI.COMM_WORLD.Bcast(novos, 0, elementos.size(), MPI.INT, 0);
+            for(int i= 0; i<elementos.size(); i++){
+                elementos.get(i).setAssociado(novos[i]);
+                paraTrabalho.get(i).setAssociado(novos[i]);
+            }
+            //System.out.println(3);
+
             numC = 0;
             for (Centroide centroide : centroides) {
-                boolean mudado = centroide.recalculaAtributosPar(elementos);
+                boolean mudado = centroide.recalculaAtributos(elementos);
                 if (!mudado) {
                     numC++;
                 }
             }
-            if (numC == 20) {
+            //System.out.println(numC);
+            if (numC == 20 || numCCount > 49) {
                 para = true;
+                /*if(id == 0){
+                    for(int l= 0; l<elementos.size(); l++)
+                        System.out.println(novos[l]);
+                }*/
+            }
+            if (numC == numCVelho){
+                numCCount++;
+            }else{
+                numCVelho= numC;
             }
         }
     }
@@ -176,15 +242,16 @@ public class trabalho2PC{
             System.out.println("Execução Sequencial");
             trabalho2PC trabalho = new trabalho2PC();
             trabalho.k_meansSeq();
+            System.out.println("Tempo decorrido: " + (System.currentTimeMillis() - startTempo));
         }
 
         if(nrThread == 1) {
             int i = 0;
-            for (Elemento elemento : elementos) {
+            /*for (Elemento elemento : elementos) {
 
-                System.out.println("Id: " + i + "\t" + "Classe: " + centroides.indexOf(elemento.getAssociado()));
+                System.out.println("Id: " + i + "\t" + "Classe: " + elemento.getAssociado());
                 i++;
-            }
+            }*/
             System.out.println("Tempo decorrido: " + (System.currentTimeMillis() - startTempo));
         }else{
             MPI.COMM_WORLD.Barrier();

@@ -3,7 +3,7 @@ import java.util.List;
 class Elemento {
     int numDimensoes;
     int[] atributos;
-    private Centroide associado;
+    private int associado;
 
     Elemento(int numD, int[] attr) {
         numDimensoes = numD;
@@ -14,8 +14,16 @@ class Elemento {
         return atributos[i];
     }
 
-    Centroide getAssociado() {
+    int getAssociado() {
         return associado;
+    }
+
+    Centroide getCentroide(List<Centroide> lista){
+        return lista.get(associado);
+    }
+
+    void setAssociado(int centroide){
+        associado= centroide;
     }
 
     void encontraCentroide(List<Centroide> centroides) {
@@ -33,6 +41,6 @@ class Elemento {
                 maisProximo = centroide;
             }
         }
-        associado = maisProximo;
+        associado = maisProximo.id;
     }
 }
