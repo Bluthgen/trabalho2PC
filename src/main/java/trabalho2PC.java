@@ -1,4 +1,3 @@
-import mpi.Datatype;
 import mpi.MPI;
 
 import java.io.IOException;
@@ -7,16 +6,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
-public class trabalho2PC{
+public class trabalho2PC {
 
     private static boolean para = false;
     private final static Charset ENCODING = StandardCharsets.UTF_8;
-    private static List<Elemento> elementos = new ArrayList<>();
+    static List<Elemento> elementos = new ArrayList<>();
     private static List<Centroide> centroides = new ArrayList<>();
+    static int tamElementos;
+    private static double tamT;
+    private static int nrThread;
 
     private static int[] centro(int num, Scanner scanner) {
         String linha = scanner.nextLine();
@@ -64,7 +65,7 @@ public class trabalho2PC{
             }
             numC = 0;
             for (Centroide centroide : centroides) {
-                boolean mudado = centroide.recalculaAtributos(elementos);
+                boolean mudado = centroide.recalculaAtributos();
                 if (!mudado) {
                     numC++;
                 }
@@ -75,167 +76,94 @@ public class trabalho2PC{
         }
     }
 
-    private static void k_meansPar(){
-        System.out.println("Entrando "+ MPI.COMM_WORLD.Rank());
-        int numC, numCVelho= 0, numCCount= 0;
-        double tamT= MPI.COMM_WORLD.Size();
-        int id= MPI.COMM_WORLD.Rank();
-        int numPorThread= (int) Math.ceil(elementos.size()/tamT);
-        List<Elemento> paraTrabalho= elementos;
-        //int[] associados= new int[elementos.size()];
+    private static void k_meansPar() {
+        int numPorThread = (int) Math.ceil(tamElementos / tamT);
+        int i, j, numC;
+        boolean mudado;
+        int[] atualizados = new int[numPorThread];
+        int[] novos = new int[tamElementos];
         while (!para) {
-            //Elemento[] trabalhado= new Elemento[numPorThread];
-            for (int i= id; i<elementos.size(); i+= tamT) {
-                Elemento elemento= elementos.get(i);
-                //trabalhado[i/(int)tamT]= elemento;
-                elemento.encontraCentroide(centroides);
-                //associados[i]= elemento.getAssociado();
+            //Encontra o centroide
+            for (i = nrThread; i < tamElementos; i += tamT) {
+                elementos.get(i).encontraCentroide(centroides);
             }
 
-            int[] atualizados= new int[numPorThread];
-            for(int i= id; i<elementos.size(); i+= tamT){
-                Elemento elemento= paraTrabalho.get(i);
-                int valor= elemento.getAssociado();
-                atualizados[i/(int)tamT]= valor;
-                //if(id == 0)
-                //    System.out.println(String.valueOf(i/tamT) + " -> " + String.valueOf(atualizados[i/(int)tamT]));
-            }
-            //System.out.println(1);
-            int[] novos= new int[elementos.size()];
-            //MPI.COMM_WORLD.Send(atualizados, 0, numPorThread, MPI.INT,0,0);
-            if(id == 0){
-                //System.out.println("Entrando");
-                for(int i= 0; i<tamT; i++){
-                    //int[] recebidos= new int[numPorThread];
-                    if(i != 0) {
-                        atualizados= new int[numPorThread];
-                        MPI.COMM_WORLD.Recv(atualizados, 0, numPorThread, MPI.INT, i, 0);
-                        /*for (int aux= 0; aux<numPorThread; aux++){
-                            System.out.println(atualizados[aux]);
-                        }*/
-                    }//System.out.println("Recebi!");
-                    for(int j= i; j<elementos.size(); j+= tamT){
-                        if (j/tamT >= atualizados.length)
+            //Cria uma lista com todos os elementos atualizados e distribui
+            if (nrThread == 0) {
+                for (i = nrThread; i < tamElementos; i += tamT) {
+                    novos[i] = elementos.get(i).getAssociado();
+                }
+                for (i = 1; i < tamT; i++) {
+                    MPI.COMM_WORLD.Recv(atualizados, 0, numPorThread, MPI.INT, i, 0);
+                    for (j = i; j < tamElementos; j += tamT) {
+                        if (j / tamT >= atualizados.length)
                             break;
-                        novos[j]= atualizados[j/(int)tamT];
-                        //System.out.println(novos[j]);
+                        novos[j] = atualizados[j / (int) tamT];
                     }
-                    //System.out.println("Proximo!");
                 }
-                //System.out.println(2);
-
-            }else {
-                /*for (int aux= 0; aux<numPorThread; aux++){
-                    System.out.println(atualizados[aux]);
+            } else {
+                for (i = nrThread; i < tamElementos; i += tamT) {
+                    atualizados[i / (int) tamT] = elementos.get(i).getAssociado();
                 }
-                System.out.println("Enviando!");
-                */MPI.COMM_WORLD.Send(atualizados, 0, numPorThread, MPI.INT, 0, 0);
-            }MPI.COMM_WORLD.Bcast(novos, 0, elementos.size(), MPI.INT, 0);
-            for(int i= 0; i<elementos.size(); i++){
-                elementos.get(i).setAssociado(novos[i]);
-                paraTrabalho.get(i).setAssociado(novos[i]);
+                MPI.COMM_WORLD.Send(atualizados, 0, numPorThread, MPI.INT, 0, 0);
             }
-            //System.out.println(3);
+            MPI.COMM_WORLD.Bcast(novos, 0, tamElementos, MPI.INT, 0);
+
+            for (i = 0; i < tamElementos; i++) {
+                elementos.get(i).setAssociado(novos[i]);
+            }
 
             numC = 0;
             for (Centroide centroide : centroides) {
-                boolean mudado = centroide.recalculaAtributos(elementos);
+                mudado = centroide.recalculaAtributos();
                 if (!mudado) {
                     numC++;
                 }
             }
-            //System.out.println(numC);
-            if (numC == 20 || numCCount > 49) {
+
+
+            if (numC == 20) {
                 para = true;
-                /*if(id == 0){
-                    for(int l= 0; l<elementos.size(); l++)
-                        System.out.println(novos[l]);
-                }*/
-            }
-            if (numC == numCVelho){
-                numCCount++;
-            }else{
-                numCVelho= numC;
             }
         }
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException {
         MPI.Init(args);
-        //nrThread ou rank não sei o melhor da refactor pois coloquei em varios lugares
-        int nrThread = MPI.COMM_WORLD.Rank();
-        int quantThreads= MPI.COMM_WORLD.Size();
+        tamT = MPI.COMM_WORLD.Size();
+        nrThread = MPI.COMM_WORLD.Rank();
         long startTempo = System.currentTimeMillis();
 
-        /* Seria o correto mas tem q fazer bCast não sei faze isso com classes imagina um list class
-        if(nrThread == 0) {
-            switch (args[3]) {
-                case "161":
-                    carregaElementos(elementos, 161);
-                    carregaCentroide(centroides, 161);
-                    break;
+        switch (args[3]) {
+            case "161":
+                carregaElementos(elementos, 161);
+                carregaCentroide(centroides, 161);
+                break;
 
-                case "256":
-                    carregaElementos(elementos, 256);
-                    carregaCentroide(centroides, 256);
-                    break;
+            case "256":
+                carregaElementos(elementos, 256);
+                carregaCentroide(centroides, 256);
+                break;
 
-                case "1380":
-                    carregaElementos(elementos, 1380);
-                    carregaCentroide(centroides, 1380);
-                    break;
+            case "1380":
+                carregaElementos(elementos, 1380);
+                carregaCentroide(centroides, 1380);
+                break;
 
-                case "1601":
-                    carregaElementos(elementos, 1601);
-                    carregaCentroide(centroides, 1601);
-                    break;
+            case "1601":
+                carregaElementos(elementos, 1601);
+                carregaCentroide(centroides, 1601);
+                break;
 
-                default:
-                    carregaElementos(elementos, 59);
-                    carregaCentroide(centroides, 59);
-                    break;
-            }//System.out.println("FIM "+nrThread);
-            MPI.COMM_WORLD.Barrier();
-        }else{
-            //System.out.println("Entrando "+nrThread);
-            MPI.COMM_WORLD.Barrier();
-            //System.out.println("Saindo "+nrThread);
+            default:
+                carregaElementos(elementos, 59);
+                carregaCentroide(centroides, 59);
+                break;
         }
-         */
-
-            switch (args[3]) {
-                case "161":
-                    carregaElementos(elementos, 161);
-                    carregaCentroide(centroides, 161);
-                    break;
-
-                case "256":
-                    carregaElementos(elementos, 256);
-                    carregaCentroide(centroides, 256);
-                    break;
-
-                case "1380":
-                    carregaElementos(elementos, 1380);
-                    carregaCentroide(centroides, 1380);
-                    break;
-
-                case "1601":
-                    carregaElementos(elementos, 1601);
-                    carregaCentroide(centroides, 1601);
-                    break;
-
-                default:
-                    carregaElementos(elementos, 59);
-                    carregaCentroide(centroides, 59);
-                    break;
-            }
-
-        if (quantThreads > 1) {
-            if(nrThread == 0) {
+        tamElementos = elementos.size();
+        if (tamT > 1) {
+            if (nrThread == 1) {
                 System.out.println("Execução Paralela");
-                MPI.COMM_WORLD.Barrier();
-            }else{
-                MPI.COMM_WORLD.Barrier();
             }
             k_meansPar();
         } else {
@@ -245,15 +173,16 @@ public class trabalho2PC{
             System.out.println("Tempo decorrido: " + (System.currentTimeMillis() - startTempo));
         }
 
-        if(nrThread == 1) {
-            int i = 0;
-            /*for (Elemento elemento : elementos) {
+        if (nrThread == 1) {
+            /*int i = 0;
+            for (Elemento elemento : elementos) {
 
                 System.out.println("Id: " + i + "\t" + "Classe: " + elemento.getAssociado());
                 i++;
-            }*/
+            }
+            */
             System.out.println("Tempo decorrido: " + (System.currentTimeMillis() - startTempo));
-        }else{
+        } else {
             MPI.COMM_WORLD.Barrier();
         }
         MPI.Finalize();

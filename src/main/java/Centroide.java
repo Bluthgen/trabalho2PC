@@ -1,14 +1,12 @@
 import mpi.MPI;
 
-import java.util.List;
-
 class Centroide extends Elemento {
 
     int id;
 
     Centroide(int numD, int[] attr, int id) {
         super(numD, attr);
-        this.id= id;
+        this.id = id;
     }
 
     private boolean setAtributo(int i, int attr) {
@@ -17,15 +15,13 @@ class Centroide extends Elemento {
         return mudado;
     }
 
-    boolean recalculaAtributos(List<Elemento> elementos) {
-        int num;
-        int soma;
-        int i;
+    boolean recalculaAtributos() {
+        int num, soma, i;
         boolean mudado = false;
         for (i = 0; i < numDimensoes; i++) {
             soma = 0;
             num = 0;
-            for (Elemento elemento : elementos) {
+            for (Elemento elemento : trabalho2PC.elementos) {
                 if (elemento.getAssociado() == this.id) {
                     num++;
                     soma += elemento.getAtributo(i);
@@ -40,18 +36,21 @@ class Centroide extends Elemento {
         return mudado;
     }
 
-    boolean recalculaAtributosPar(List<Elemento> elementos, int[] associados){
+    boolean recalculaAtributosPar(){
         int nrThread = MPI.COMM_WORLD.Rank();
         int tamanho = MPI.COMM_WORLD.Size();
+        int tamanhoFake = tamanho-1;
         int[] numPorThread = new int[tamanho*2];
         numPorThread[0] = 0;
-        numPorThread[1] = (int) Math.floor(elementos.size() / (tamanho*1.0));
-        for(int i=2;i<tamanho*2;i+=2){
+        numPorThread[1] = 0;
+        numPorThread[2] = 0;
+        numPorThread[3] = (int) Math.floor(trabalho2PC.tamElementos / (tamanhoFake*1.0));
+        for(int i=4;i<tamanho*2;i+=2){
             numPorThread[i]=numPorThread[i-1];
             if(i!=tamanho*2-2){
-                numPorThread[i+1] = numPorThread[i]+(int) Math.floor(elementos.size() / (tamanho*1.0));
+                numPorThread[i+1] = numPorThread[i]+(int) Math.floor(trabalho2PC.tamElementos / (tamanhoFake*1.0));
             }else{
-                numPorThread[i+1] = elementos.size();
+                numPorThread[i+1] = trabalho2PC.tamElementos;
             }
         }
 
@@ -64,14 +63,6 @@ class Centroide extends Elemento {
         for (int i = 0; i < numDimensoes; i++) {
             int soma = 0;
             int num = 0;
-
-            for(int k = recebidos[0]; k < recebidos[1]; k++) {
-                if (associados[k] == this.id) {
-                    num++;
-                    soma += elementos.get(k).getAtributo(i);
-                }
-            }
-
             if(nrThread==0){
                 int[] numA = {0};
                 int[] somaA = {0};
@@ -92,6 +83,12 @@ class Centroide extends Elemento {
                 }
                 listaMudancas[conn] = -1;
             }else{
+                for(int k = recebidos[0]; k < recebidos[1]; k++) {
+                    if (trabalho2PC.elementos.get(k).getAssociado() == this.id) {
+                        num++;
+                        soma += trabalho2PC.elementos.get(k).getAtributo(i);
+                    }
+                }
                 int[] numA = {num};
                 int[] somaA = {soma};
                 MPI.COMM_WORLD.Send(numA, 0,1,MPI.INT,0,0);

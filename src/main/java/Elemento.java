@@ -18,10 +18,6 @@ class Elemento {
         return associado;
     }
 
-    Centroide getCentroide(List<Centroide> lista){
-        return lista.get(associado);
-    }
-
     void setAssociado(int centroide){
         associado= centroide;
     }
