@@ -16,8 +16,8 @@ public class trabalho2PC {
     static List<Elemento> elementos = new ArrayList<>();
     private static List<Centroide> centroides = new ArrayList<>();
     static int tamElementos;
-    private static double tamT;
-    private static int nrThread;
+    static double tamT;
+    static int nrThread;
 
     private static int[] centro(int num, Scanner scanner) {
         String linha = scanner.nextLine();
@@ -115,7 +115,7 @@ public class trabalho2PC {
 
             numC = 0;
             for (Centroide centroide : centroides) {
-                mudado = centroide.recalculaAtributos();
+                mudado = centroide.recalculaAtributosPar();
                 if (!mudado) {
                     numC++;
                 }

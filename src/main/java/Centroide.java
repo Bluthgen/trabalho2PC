@@ -37,17 +37,15 @@ class Centroide extends Elemento {
     }
 
     boolean recalculaAtributosPar(){
-        int nrThread = MPI.COMM_WORLD.Rank();
-        int tamanho = MPI.COMM_WORLD.Size();
-        int tamanhoFake = tamanho-1;
-        int[] numPorThread = new int[tamanho*2];
+        double tamanhoFake = trabalho2PC.tamT-1;
+        int[] numPorThread = new int[(int)trabalho2PC.tamT*2];
         numPorThread[0] = 0;
         numPorThread[1] = 0;
         numPorThread[2] = 0;
         numPorThread[3] = (int) Math.floor(trabalho2PC.tamElementos / (tamanhoFake*1.0));
-        for(int i=4;i<tamanho*2;i+=2){
+        for(int i=4;i<trabalho2PC.tamT*2;i+=2){
             numPorThread[i]=numPorThread[i-1];
-            if(i!=tamanho*2-2){
+            if(i!=trabalho2PC.tamT*2-2){
                 numPorThread[i+1] = numPorThread[i]+(int) Math.floor(trabalho2PC.tamElementos / (tamanhoFake*1.0));
             }else{
                 numPorThread[i+1] = trabalho2PC.tamElementos;
@@ -63,10 +61,10 @@ class Centroide extends Elemento {
         for (int i = 0; i < numDimensoes; i++) {
             int soma = 0;
             int num = 0;
-            if(nrThread==0){
+            if(trabalho2PC.nrThread==0){
                 int[] numA = {0};
                 int[] somaA = {0};
-                for(int op=1; op<tamanho; op++){
+                for(int op=1; op<trabalho2PC.tamT; op++){
                     MPI.COMM_WORLD.Recv(numA, 0,1,MPI.INT,op,0);
                     MPI.COMM_WORLD.Recv(somaA, 0,1,MPI.INT,op,1);
                     soma+=somaA[0];
@@ -97,7 +95,7 @@ class Centroide extends Elemento {
         }
         MPI.COMM_WORLD.Bcast(mudado,0,1,MPI.BOOLEAN,0);
         MPI.COMM_WORLD.Bcast(listaMudancas,0,listaMudancas.length,MPI.INT,0);
-        if(mudado[0] && nrThread!=0){
+        if(mudado[0] && trabalho2PC.nrThread!=0){
             for(int l=0; l < listaMudancas.length;l+=2){
                 if(listaMudancas[l]==-1){
                     break;
