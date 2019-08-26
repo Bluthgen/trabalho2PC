@@ -1,15 +1,11 @@
 # Programa necessário
-Java, MPJ Express
+IntelliJ IDEA, Java, MPJ Express
 # Sistema operacional
 Windows
 # Como executar
-Para compilar, use o argumento:
-`-cp .;%MPJ_HOME%/lib/mpj.jar`
-
-Na pasta ??? do projeto execute no terminal:
-`mpjrun.bat -np 4 trabalho2PC.java`
-
-- tamanho_da_base é o tamanho da base que pode ser 59, 161, 256, 1380, 1601, com 59 sendo o valor default.
-- quantidade_de_threads é o número de threads que srão utilizadas na execução paralela, podendo ser de 1 ao infinito. Caso seja inserido qualquer outro valor, ou se for inserida uma letra, ou não se inserir nada quando escolhido o modo paralelo de execução, ocorrerá um erro.
+Mude as configurações de execução para a versão do Java utilizada em seu computador em "Edit Configurations" caso contrario a versão executada será a onze.
+Depois de feito isso a partir de mudanças no campo VM Options podera se selecionar a quantidade de threads o tamanho da base
+	O penúltimo valor significa a quantidade de threads
+	O último valor o tamanho da base a ser executada
 
 Caso nenhum parametro seja fornecido, será executada a base 59 de forma sequencial.
