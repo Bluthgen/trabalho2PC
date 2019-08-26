@@ -146,6 +146,7 @@ public class trabalho2PC {
                 break;
 
             case "1380":
+
                 carregaElementos(elementos, 1380);
                 carregaCentroide(centroides, 1380);
                 break;
@@ -174,7 +175,8 @@ public class trabalho2PC {
         }
 
         if (nrThread == 1) {
-            /*int i = 0;
+            /*
+            int i = 0;
             for (Elemento elemento : elementos) {
 
                 System.out.println("Id: " + i + "\t" + "Classe: " + elemento.getAssociado());
@@ -182,8 +184,6 @@ public class trabalho2PC {
             }
             */
             System.out.println("Tempo decorrido: " + (System.currentTimeMillis() - startTempo));
-        } else {
-            MPI.COMM_WORLD.Barrier();
         }
         MPI.Finalize();
     }

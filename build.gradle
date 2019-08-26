@@ -1,16 +1,12 @@
 plugins {
-    id 'java'
+    id 'application'
 }
 
-group 'trabalhoPC'
-version '1.0-SNAPSHOT'
+mainClassName = 'trabalho2PC'
 
-sourceCompatibility = 1.8
-
-repositories {
-    mavenCentral()
-}
+def mpjHome = System.getenv('MPJ_HOME')
+def mpjJar = files("$mpjHome/lib/mpj.jar")
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile mpjJar
 }

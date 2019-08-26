@@ -2,6 +2,8 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
+      <module name="trabalho2PC.main" target="11" />
+      <module name="trabalho2PC.test" target="11" />
       <module name="trabalhoPC.trabalho2PC.main" target="1.8" />
       <module name="trabalhoPC.trabalho2PC.test" target="1.8" />
     </bytecodeTargetLevel>
